@@ -20,6 +20,7 @@ class QrController extends Controller
             'amount' => $request->amount,
             'currency' => $request->currency,
             'status' => 'pending',
+            'expires_at' => now()->addMinutes(5), // 👈 expire dans 5 minutes
         ]);
 
         return response()->json([
@@ -54,6 +55,11 @@ class QrController extends Controller
         if (!$tx) {
             return response()->json(['error' => 'QR Code non trouvé'], 404);
         }
+        if ($tx->expires_at && now()->greaterThan($tx->expires_at)) {
+            return response()->json([
+                'error' => 'Ce QR Code a expiré.',
+            ], 410); // 410 Gone
+        }
 
         if ($tx->status === 'paid') {
             return response()->json(['message' => 'Paiement déjà effectué'], 200);
@@ -86,6 +92,7 @@ class QrController extends Controller
             'amount' => $request->amount,
             'currency' => $request->currency,
             'status' => 'pending',
+            'expires_at' => now()->addMinutes(5), // 👈 expire dans 5 minutes
         ]);
 
         return response()->json([
@@ -107,7 +114,12 @@ class QrController extends Controller
         if (!$tx) {
             return response()->json(['error' => 'Token NFC invalide'], 404);
         }
-
+        
+        if ($tx->expires_at && now()->greaterThan($tx->expires_at)) {
+            return response()->json([
+                'error' => 'Ce QR Code a expiré.',
+            ], 410); // 410 Gone
+        }
         if ($tx->status === 'paid') {
             return response()->json(['message' => 'Déjà payé']);
         }
